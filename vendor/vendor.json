@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "dbLn+sKVy1/HqOfaAOpfGiZd0z4=",
+			"path": "github.com/zncoder/zniconv",
+			"revision": "6f507d5005c7485fbdaddb5ae39e328a56921d97",
+			"revisionTime": "2016-05-14T00:07:25Z"
+		}
+	],
+	"rootPath": "github.com/zncoder/znunzip"
+}
