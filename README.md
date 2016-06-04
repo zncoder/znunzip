@@ -6,6 +6,16 @@ To install,
 
     go get github.com/zncoder/znunzip
 
-For example to unzip a zip file that contains file names with chinese characters,
+To test a zip file,
 
-    znunzip -c=gbk -x foo.zip
+    znunzip foo.zip
+
+To unzip a zip file,
+
+    znunzip -x foo.zip
+
+To unzip a zip file that has file names in chinese characters,
+
+    znunzip -c gb18030 -x foo.zip
+
+
