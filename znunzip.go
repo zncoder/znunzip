@@ -2,7 +2,6 @@ package main
 
 import (
 	"archive/zip"
-	"bytes"
 	"flag"
 	"io"
 	"io/ioutil"
@@ -10,7 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/zncoder/zniconv"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
 )
 
 var (
@@ -19,8 +19,16 @@ var (
 	charset     = flag.String("c", "gb18030", "charset used in the zip file")
 )
 
+var conv *encoding.Decoder
+
 func main() {
 	flag.Parse()
+
+	cs, err := htmlindex.Get(*charset)
+	if err != nil {
+		log.Fatalf("get encoding of charset=%s err=%v", *charset, err)
+	}
+	conv = cs.NewDecoder()
 
 	for _, zf := range flag.Args() {
 		unzip(zf)
@@ -34,9 +42,6 @@ func unzip(zf string) {
 
 	}
 	defer r.Close()
-
-	conv, err := zniconv.NewReader(zniconv.Options{From: *charset}, nil)
-	defer conv.Close()
 
 	var tempdir string
 	if *extract {
@@ -61,7 +66,7 @@ func unzip(zf string) {
 	}
 
 	for _, f := range r.File {
-		unzipOne(f, conv)
+		unzipOne(f)
 	}
 
 	if *extract {
@@ -88,17 +93,11 @@ func unzip(zf string) {
 	}
 }
 
-func convertName(fn string, conv *zniconv.Reader) string {
-	conv.Reset(bytes.NewBufferString(fn))
-	b, err := conv.ReadAll()
+func unzipOne(zf *zip.File) {
+	fn, err := conv.String(zf.Name)
 	if err != nil {
-		log.Panicf("conv fn=%s err=%v", fn, err)
+		fn = zf.Name
 	}
-	return string(b)
-}
-
-func unzipOne(zf *zip.File, conv *zniconv.Reader) {
-	fn := convertName(zf.Name, conv)
 
 	if !*extract {
 		log.Println(fn)
