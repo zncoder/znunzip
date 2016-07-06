@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"flag"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,9 +13,9 @@ import (
 )
 
 var (
-	extract     = flag.Bool("x", false, "extract")
-	keepPartial = flag.Bool("k", false, "keep partial result when unzip fails")
-	charset     = flag.String("c", "gb18030", "charset used in the zip file")
+	extract = flag.Bool("x", false, "extract")
+	test    = flag.Bool("t", true, "test")
+	charset = flag.String("c", "gb18030", "charset used in the zip file")
 )
 
 var conv *encoding.Decoder
@@ -43,63 +42,26 @@ func unzip(zf string) {
 	}
 	defer r.Close()
 
-	var tempdir string
-	if *extract {
-		tempdir, err = ioutil.TempDir(".", zf)
-		if err != nil {
-			log.Panicf("create tempdir err=%v", err)
+	if *test {
+		for _, f := range r.File {
+			unzipOne(f, true)
 		}
-		os.Chdir(tempdir)
-
-		defer func() {
-			os.Chdir("..")
-
-			if *keepPartial {
-				return
-			}
-
-			err = os.RemoveAll(tempdir)
-			if err != nil {
-				log.Panicf("remove tempdir=%s err=%v", tempdir, err)
-			}
-		}()
-	}
-
-	for _, f := range r.File {
-		unzipOne(f)
 	}
 
 	if *extract {
-		d, err := os.Open(".")
-		if err != nil {
-			log.Panicf("open cwd err=%v", err)
-		}
-		names, err := d.Readdirnames(0)
-		if err != nil {
-			log.Panicf("readdirnames err=%v", err)
-		}
-		for _, name := range names {
-			newname := "../" + name
-			if _, err = os.Lstat(newname); err == nil {
-				log.Panicf("would overwrite file=%s", name)
-			}
-		}
-		for _, name := range names {
-			newname := "../" + name
-			if err = os.Rename(name, newname); err != nil {
-				log.Panicf("rename %s to %s err=%v", name, newname, err)
-			}
+		for _, f := range r.File {
+			unzipOne(f, false)
 		}
 	}
 }
 
-func unzipOne(zf *zip.File) {
+func unzipOne(zf *zip.File, testOnly bool) {
 	fn, err := conv.String(zf.Name)
 	if err != nil {
 		fn = zf.Name
 	}
 
-	if !*extract {
+	if testOnly {
 		log.Println(fn)
 		return
 	}
